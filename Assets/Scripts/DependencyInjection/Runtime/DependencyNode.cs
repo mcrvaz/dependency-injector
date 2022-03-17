@@ -1,15 +1,16 @@
 using System;
-using System.Collections.Generic;
 
 public class DependencyNode
 {
+    public static readonly DependencyNode[] EmptyDependencies = new DependencyNode[0];
+
     public readonly Type Type;
     public readonly Lifecycle Lifecycle;
-    public readonly List<DependencyNode> Dependencies;
+    public readonly DependencyNode[] Dependencies;
 
-    public bool HasDependencies => Dependencies?.Count > 0;
+    public bool HasDependencies => Dependencies?.Length > 0;
 
-    public DependencyNode (Type type, Lifecycle lifecycle, List<DependencyNode> dependencies)
+    public DependencyNode (Type type, Lifecycle lifecycle, DependencyNode[] dependencies)
     {
         Type = type;
         Lifecycle = lifecycle;

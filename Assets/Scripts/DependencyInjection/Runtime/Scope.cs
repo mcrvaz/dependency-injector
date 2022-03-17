@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 public class Scope
 {
@@ -14,10 +13,9 @@ public class Scope
 
     public void InstallFromInstance<T> (T instance)
     {
-        if (!singletons.TryAdd(typeof(T), instance))
-            throw new InvalidOperationException($"Singleton instace of type {typeof(T)} already registered.");
-        installations.Add(typeof(T), new RegistrationOptions(Lifecycle.Singleton));
-        AddToInstantiated(instance);
+        Type type = typeof(T);
+        Install(type, Lifecycle.Singleton);
+        AddToInstantiated(type, instance, Lifecycle.Singleton);
     }
 
     public void ResolveAll ()
@@ -60,38 +58,38 @@ public class Scope
 
     object ResolveAsTransient (Type type)
     {
-        object ResolveAsTransientInternal (DependencyNode initialNode)
+        object[] GetDependencies (DependencyNode node)
         {
-            Type type = initialNode.Type;
-            if (initialNode.Dependencies == null)
-                return CreateFromEmptyConstructor(type);
-            foreach (DependencyNode item in initialNode.Dependencies)
+            object[] dependencies = new object[node.Dependencies.Length];
+            for (int i = 0; i < node.Dependencies.Length; i++)
             {
-                if (singletons.ContainsKey(item.Type))
-                    continue;
-
-                if (!item.HasDependencies)
-                    CreateFromEmptyConstructor(type);
+                DependencyNode dependency = node.Dependencies[i];
+                if (singletons.TryGetValue(dependency.Type, out object instance))
+                    dependencies[i] = instance;
+                else if (!node.HasDependencies)
+                    dependencies[i] = CreateFromEmptyConstructor(dependency.Type);
                 else
-                    ResolveAsTransientInternal(item);
+                    dependencies[i] = ResolveAsTransient(dependency.Type);
             }
-            return CreateFromNonEmptyConstructor(
-                type,
-                initialNode.Dependencies.Select(x => x.Type).ToArray()
-            );
+            return dependencies;
         }
 
         DependencyNode targetNode = dependencyGraph.GetNode(type);
-        return ResolveAsTransientInternal(targetNode);
+        if (singletons.TryGetValue(targetNode.Type, out object instance))
+            return instance;
+        if (!targetNode.HasDependencies)
+            return CreateFromEmptyConstructor(targetNode.Type);
+        return CreateFromNonEmptyConstructor(
+            targetNode.Type,
+            GetDependencies(targetNode)
+        );
     }
 
     object CreateFromEmptyConstructor (Type type)
     {
         RegistrationOptions options = installations[type];
         object instance = Activator.CreateInstance(type);
-        AddToInstantiated(instance);
-        if (options.Lifecycle == Lifecycle.Singleton)
-            singletons[type] = instance;
+        AddToInstantiated(type, instance, options.Lifecycle);
         return instance;
     }
 
@@ -99,18 +97,25 @@ public class Scope
     {
         RegistrationOptions options = installations[type];
         object instance = Activator.CreateInstance(type, args);
-        AddToInstantiated(instance);
-        if (options.Lifecycle == Lifecycle.Singleton)
-            singletons[type] = instance;
+        AddToInstantiated(type, instance, options.Lifecycle);
         return instance;
     }
 
-    void AddToInstantiated<T> (T instance)
+    void AddToInstantiated (Type type, object instance, Lifecycle lifecycle)
     {
-        if (instantiated.TryGetValue(typeof(T), out List<object> list))
+        if (instantiated.TryGetValue(type, out List<object> list))
             list.Add(instance);
         else
-            instantiated.Add(typeof(T), new List<object> { instance });
+            instantiated.Add(type, new List<object> { instance });
+
+        if (lifecycle == Lifecycle.Singleton)
+            AddToSingletons(type, instance);
+    }
+
+    void AddToSingletons (Type type, object instance)
+    {
+        if (!singletons.TryAdd(type, instance))
+            throw new InvalidOperationException($"Singleton instace of type {type} already registered.");
     }
 
     public void Dispose ()
