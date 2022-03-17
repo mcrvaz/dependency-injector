@@ -1,13 +1,33 @@
 using System;
 using System.Collections.Generic;
 
-public class Scope
+public partial class Scope
 {
     readonly Dictionary<Type, RegistrationOptions> installations = new Dictionary<Type, RegistrationOptions>();
     readonly Dictionary<Type, object> singletons = new Dictionary<Type, object>();
     readonly Dictionary<Type, List<object>> instantiated = new Dictionary<Type, List<object>>();
+    readonly Scope parent;
+    readonly SelfAndParentDependencyResolver dependencyResolver;
+    readonly List<Scope> childScopes = new List<Scope>();
 
     DependencyGraph dependencyGraph;
+
+    public Scope ()
+    {
+        dependencyResolver = new SelfAndParentDependencyResolver(this);
+    }
+
+    Scope (Scope parent) : this()
+    {
+        this.parent = parent;
+    }
+
+    public Scope CreateChildScope ()
+    {
+        Scope child = new Scope(this);
+        childScopes.Add(child);
+        return child;
+    }
 
     public void Install<T> (Lifecycle lifecycle) => Install(typeof(T), lifecycle);
 
@@ -20,19 +40,16 @@ public class Scope
 
     public void ResolveAll ()
     {
-        if (dependencyGraph == null)
-            dependencyGraph = new DependencyGraph(installations);
-
+        GenerateDependencyGraph();
         foreach ((Type type, RegistrationOptions options) in installations)
             Resolve(type, options.Lifecycle);
     }
 
     public T Resolve<T> ()
     {
-        if (dependencyGraph == null)
-            dependencyGraph = new DependencyGraph(installations);
-
-        return (T)Resolve(typeof(T), installations[typeof(T)].Lifecycle);
+        GenerateDependencyGraph();
+        RegistrationOptions options = GetInstallationOptions(typeof(T));
+        return (T)Resolve(typeof(T), options.Lifecycle);
     }
 
     void Install (Type type, Lifecycle lifecycle)
@@ -49,9 +66,21 @@ public class Scope
         _ => throw new ArgumentException($"Invalid lifecycle type. Value: {lifecycle}"),
     };
 
+    RegistrationOptions GetInstallationOptions (Type type)
+    {
+        Scope currentParent = this;
+        do
+        {
+            if (currentParent.installations.TryGetValue(type, out RegistrationOptions options))
+                return options;
+            currentParent = currentParent.parent;
+        } while (currentParent != null);
+        throw new InvalidOperationException($"No registration found for type {type}.");
+    }
+
     object ResolveAsSingleton (Type type)
     {
-        if (singletons.TryGetValue(type, out object singleton))
+        if (dependencyResolver.TryResolveAsSingletonStrict(type, out object singleton))
             return singleton;
         return ResolveAsTransient(type);
     }
@@ -60,11 +89,14 @@ public class Scope
     {
         object[] GetDependencies (DependencyNode node)
         {
-            object[] dependencies = new object[node.Dependencies.Length];
-            for (int i = 0; i < node.Dependencies.Length; i++)
+            object[] dependencies = new object[node.Dependencies.Count];
+            for (int i = 0; i < node.Dependencies.Count; i++)
             {
                 DependencyNode dependency = node.Dependencies[i];
-                if (singletons.TryGetValue(dependency.Type, out object instance))
+                RegistrationOptions options = GetInstallationOptions(dependency.Type);
+                if (options.Lifecycle == Lifecycle.Singleton
+                    && dependencyResolver.TryResolveAsSingletonStrict(dependency.Type, out object instance)
+                )
                     dependencies[i] = instance;
                 else if (!node.HasDependencies)
                     dependencies[i] = CreateFromEmptyConstructor(dependency.Type);
@@ -74,8 +106,11 @@ public class Scope
             return dependencies;
         }
 
-        DependencyNode targetNode = dependencyGraph.GetNode(type);
-        if (singletons.TryGetValue(targetNode.Type, out object instance))
+        DependencyNode targetNode = GetDependencyNode(type);
+        RegistrationOptions options = GetInstallationOptions(type);
+        if (options.Lifecycle == Lifecycle.Singleton
+            && dependencyResolver.TryResolveAsSingletonStrict(targetNode.Type, out object instance)
+        )
             return instance;
         if (!targetNode.HasDependencies)
             return CreateFromEmptyConstructor(targetNode.Type);
@@ -85,9 +120,32 @@ public class Scope
         );
     }
 
+    void GenerateDependencyGraph ()
+    {
+        Scope currentParent = this;
+        do
+        {
+            if (currentParent.dependencyGraph == null)
+                currentParent.dependencyGraph = new DependencyGraph(currentParent.installations);
+            currentParent = currentParent.parent;
+        } while (currentParent != null);
+    }
+
+    DependencyNode GetDependencyNode (Type type)
+    {
+        Scope currentParent = this;
+        do
+        {
+            if (currentParent.dependencyGraph.TryGetNode(type, out DependencyNode node))
+                return node;
+            currentParent = currentParent.parent;
+        } while (currentParent != null);
+        throw new InvalidOperationException($"No dependency node found for type {type}.");
+    }
+
     object CreateFromEmptyConstructor (Type type)
     {
-        RegistrationOptions options = installations[type];
+        RegistrationOptions options = GetInstallationOptions(type);
         object instance = Activator.CreateInstance(type);
         AddToInstantiated(type, instance, options.Lifecycle);
         return instance;
@@ -95,7 +153,7 @@ public class Scope
 
     object CreateFromNonEmptyConstructor (Type type, object[] args)
     {
-        RegistrationOptions options = installations[type];
+        RegistrationOptions options = GetInstallationOptions(type);
         object instance = Activator.CreateInstance(type, args);
         AddToInstantiated(type, instance, options.Lifecycle);
         return instance;
@@ -115,7 +173,7 @@ public class Scope
     void AddToSingletons (Type type, object instance)
     {
         if (!singletons.TryAdd(type, instance))
-            throw new InvalidOperationException($"Singleton instace of type {type} already registered.");
+            throw new InvalidOperationException($"Singleton instance of type {type} already registered.");
     }
 
     public void Dispose ()
@@ -128,5 +186,8 @@ public class Scope
                     disposable.Dispose();
             }
         }
+
+        foreach (Scope scope in childScopes)
+            scope.Dispose();
     }
 }

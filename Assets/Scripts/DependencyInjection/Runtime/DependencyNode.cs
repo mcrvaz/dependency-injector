@@ -1,19 +1,21 @@
 using System;
+using System.Collections.Generic;
 
-public class DependencyNode
+public readonly struct DependencyNode
 {
     public static readonly DependencyNode[] EmptyDependencies = new DependencyNode[0];
 
+    public IReadOnlyList<DependencyNode> Dependencies => dependencies;
     public readonly Type Type;
     public readonly Lifecycle Lifecycle;
-    public readonly DependencyNode[] Dependencies;
+    readonly DependencyNode[] dependencies;
 
-    public bool HasDependencies => Dependencies?.Length > 0;
+    public bool HasDependencies => dependencies?.Length > 0;
 
     public DependencyNode (Type type, Lifecycle lifecycle, DependencyNode[] dependencies)
     {
         Type = type;
         Lifecycle = lifecycle;
-        Dependencies = dependencies;
+        this.dependencies = dependencies;
     }
 }

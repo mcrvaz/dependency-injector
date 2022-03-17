@@ -18,18 +18,23 @@ public class DependencyGraph
 
     public DependencyNode GetNode (Type type)
     {
+        if (TryGetNode(type, out DependencyNode node))
+            return node;
+        throw new NodeNotFoundException(type);
+    }
+
+    public bool TryGetNode (Type type, out DependencyNode resultNode)
+    {
         foreach (DependencyNode node in nodes)
         {
             if (node.Type == type)
-                return node;
-
-            foreach (DependencyNode nodeDependency in node.Dependencies)
             {
-                if (nodeDependency.Type == type)
-                    return node;
+                resultNode = node;
+                return true;
             }
         }
-        throw new NodeNotFoundException(type);
+        resultNode = default;
+        return false;
     }
 
     void GenerateGraph ()

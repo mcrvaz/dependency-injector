@@ -10,18 +10,29 @@ public class TestClasses
     public class IntConstructor
     {
         public readonly int Value;
-        public IntConstructor (int i)
+        public IntConstructor (int value)
         {
-            Value = i;
+            Value = value;
         }
     }
 
     public class NestedEmptyConstructor
     {
         public readonly EmptyConstructor Value;
-        public NestedEmptyConstructor (EmptyConstructor empty)
+        public NestedEmptyConstructor (EmptyConstructor value)
         {
-            Value = empty;
+            Value = value;
+        }
+    }
+
+    public class NestedEmptyConstructorMultipleParameters
+    {
+        public readonly EmptyConstructor Value1;
+        public readonly int Value2;
+        public NestedEmptyConstructorMultipleParameters (EmptyConstructor value1, int value2)
+        {
+            Value1 = value1;
+            Value2 = value2;
         }
     }
 }

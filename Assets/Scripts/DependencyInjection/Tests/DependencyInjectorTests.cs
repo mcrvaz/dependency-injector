@@ -3,9 +3,9 @@
 using NUnit.Framework;
 using static TestClasses;
 
-public class DependencyInjectorTests
+public class ScopeTests
 {
-    class BaseDependencyInjectorTests
+    class BaseScopeTests
     {
         public Scope Scope { get; private set; }
 
@@ -19,7 +19,7 @@ public class DependencyInjectorTests
         public void Cleanup () { }
     }
 
-    class ResolveSingleton : BaseDependencyInjectorTests
+    class ResolveSingleton : BaseScopeTests
     {
         [Test]
         public void Resolve_EmptyConstructor_Singleton ()
@@ -37,7 +37,7 @@ public class DependencyInjectorTests
         }
     }
 
-    class ResolveTransient : BaseDependencyInjectorTests
+    class ResolveTransient : BaseScopeTests
     {
         [Test]
         public void Resolve_EmptyConstructor_Transient ()
@@ -51,11 +51,13 @@ public class DependencyInjectorTests
         {
             Scope.Install<EmptyConstructor>(Lifecycle.Transient);
             EmptyConstructor instance = Scope.Resolve<EmptyConstructor>();
-            Assert.AreNotEqual(instance, Scope.Resolve<EmptyConstructor>());
+            EmptyConstructor secondInstance = Scope.Resolve<EmptyConstructor>();
+            Assert.IsNotNull(secondInstance);
+            Assert.AreNotEqual(instance, secondInstance);
         }
     }
 
-    class Resolve_NoConstructor : BaseDependencyInjectorTests
+    class Resolve_NoConstructor : BaseScopeTests
     {
         [Test]
         public void Resolve ()
@@ -65,7 +67,7 @@ public class DependencyInjectorTests
         }
     }
 
-    class Resolve_IntConstutor : BaseDependencyInjectorTests
+    class Resolve_IntConstutor : BaseScopeTests
     {
         [Test]
         public void Resolve_Instance ()
@@ -86,7 +88,7 @@ public class DependencyInjectorTests
         }
     }
 
-    class Resolve_NestedConstutor : BaseDependencyInjectorTests
+    class Resolve_NestedConstutor : BaseScopeTests
     {
         [Test]
         public void Resolve_Instance ()
@@ -104,6 +106,89 @@ public class DependencyInjectorTests
             EmptyConstructor emptyConstructorInstance = Scope.Resolve<EmptyConstructor>();
             NestedEmptyConstructor instance = Scope.Resolve<NestedEmptyConstructor>();
             Assert.AreEqual(emptyConstructorInstance, instance.Value);
+        }
+    }
+
+    class Resolve_NestedEmptyConstructorMultipleParameters : BaseScopeTests
+    {
+        [Test]
+        public void Resolve_Instance ()
+        {
+            int intInstance = 1;
+            Scope.InstallFromInstance(intInstance);
+            Scope.Install<EmptyConstructor>(Lifecycle.Singleton);
+            Scope.Install<NestedEmptyConstructorMultipleParameters>(Lifecycle.Singleton);
+            Assert.IsTrue(Scope.Resolve<NestedEmptyConstructorMultipleParameters>() is NestedEmptyConstructorMultipleParameters);
+        }
+
+        [Test]
+        public void Resolve_Instance_Value ()
+        {
+            int intInstance = 1;
+            Scope.InstallFromInstance(intInstance);
+            Scope.Install<EmptyConstructor>(Lifecycle.Singleton);
+            Scope.Install<NestedEmptyConstructorMultipleParameters>(Lifecycle.Singleton);
+            EmptyConstructor emptyConstructorInstance = Scope.Resolve<EmptyConstructor>();
+            NestedEmptyConstructorMultipleParameters instance = Scope.Resolve<NestedEmptyConstructorMultipleParameters>();
+            Assert.AreEqual(emptyConstructorInstance, instance.Value1);
+            Assert.AreEqual(intInstance, instance.Value2);
+        }
+    }
+
+    class ResolveFromParent : BaseScopeTests
+    {
+        [Test]
+        public void Child_Override_Singleton ()
+        {
+            Scope parent = Scope;
+            Scope child = parent.CreateChildScope();
+            EmptyConstructor i1 = new EmptyConstructor();
+            EmptyConstructor i2 = new EmptyConstructor();
+            parent.InstallFromInstance(i1);
+            child.InstallFromInstance(i2);
+            Assert.AreEqual(i2, child.Resolve<EmptyConstructor>());
+        }
+
+        [Test]
+        public void Parent_Singleton ()
+        {
+            Scope parent = Scope;
+            Scope child = parent.CreateChildScope();
+            EmptyConstructor i1 = new EmptyConstructor();
+            parent.InstallFromInstance(i1);
+            Assert.AreEqual(i1, child.Resolve<EmptyConstructor>());
+        }
+
+        [Test]
+        public void Child_Override_Transient ()
+        {
+            Scope parent = Scope;
+            Scope child = parent.CreateChildScope();
+            parent.Install<EmptyConstructor>(Lifecycle.Transient);
+            child.Install<EmptyConstructor>(Lifecycle.Transient);
+            Assert.IsTrue(child.Resolve<EmptyConstructor>() is EmptyConstructor);
+        }
+
+        [Test]
+        public void Parent_Transient ()
+        {
+            Scope parent = Scope;
+            Scope child = parent.CreateChildScope();
+            parent.Install<EmptyConstructor>(Lifecycle.Transient);
+            Assert.IsTrue(child.Resolve<EmptyConstructor>() is EmptyConstructor);
+        }
+
+        [Test]
+        public void Child_Override_Singleton_With_Transient ()
+        {
+            Scope parent = Scope;
+            Scope child = parent.CreateChildScope();
+            EmptyConstructor i1 = new EmptyConstructor();
+            parent.InstallFromInstance(i1);
+            child.Install<EmptyConstructor>(Lifecycle.Transient);
+            EmptyConstructor instance = child.Resolve<EmptyConstructor>();
+            Assert.IsNotNull(instance);
+            Assert.AreNotEqual(i1, instance);
         }
     }
 }
