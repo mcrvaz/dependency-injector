@@ -1,9 +1,8 @@
 using System;
 
-public class RegistrationOptions
+internal class RegistrationOptions
 {
     public readonly Lifecycle Lifecycle;
-    public readonly bool Lazy;
     public readonly Func<object> FactoryFunc;
 
     public RegistrationOptions (Lifecycle lifecycle)

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-public class DependencyGraph
+internal class DependencyGraph
 {
     public IReadOnlyList<DependencyNode> Nodes => nodes;
 

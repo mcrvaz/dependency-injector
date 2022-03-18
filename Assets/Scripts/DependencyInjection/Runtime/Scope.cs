@@ -5,7 +5,8 @@ public partial class Scope
 {
     readonly Dictionary<Type, RegistrationOptions> installations = new Dictionary<Type, RegistrationOptions>();
     readonly Dictionary<Type, object> singletons = new Dictionary<Type, object>();
-    readonly Dictionary<Type, List<object>> instantiated = new Dictionary<Type, List<object>>();
+    readonly List<IDisposable> disposables = new List<IDisposable>();
+
     readonly Scope parent;
     readonly SelfAndParentDependencyResolver dependencyResolver;
     readonly List<Scope> childScopes = new List<Scope>();
@@ -29,13 +30,18 @@ public partial class Scope
         return child;
     }
 
+    public void Install<T1, T2> (Lifecycle lifecycle)
+    {
+        Install(typeof(T2), lifecycle);
+    }
+
     public void Install<T> (Lifecycle lifecycle) => Install(typeof(T), lifecycle);
 
     public void InstallFromInstance<T> (T instance)
     {
         Type type = typeof(T);
         Install(type, Lifecycle.Singleton);
-        AddToInstantiated(type, instance, Lifecycle.Singleton);
+        FinishInstantiation(type, instance, Lifecycle.Singleton);
     }
 
     public void ResolveAll ()
@@ -147,7 +153,7 @@ public partial class Scope
     {
         RegistrationOptions options = GetInstallationOptions(type);
         object instance = Activator.CreateInstance(type);
-        AddToInstantiated(type, instance, options.Lifecycle);
+        FinishInstantiation(type, instance, options.Lifecycle);
         return instance;
     }
 
@@ -155,17 +161,14 @@ public partial class Scope
     {
         RegistrationOptions options = GetInstallationOptions(type);
         object instance = Activator.CreateInstance(type, args);
-        AddToInstantiated(type, instance, options.Lifecycle);
+        FinishInstantiation(type, instance, options.Lifecycle);
         return instance;
     }
 
-    void AddToInstantiated (Type type, object instance, Lifecycle lifecycle)
+    void FinishInstantiation (Type type, object instance, Lifecycle lifecycle)
     {
-        if (instantiated.TryGetValue(type, out List<object> list))
-            list.Add(instance);
-        else
-            instantiated.Add(type, new List<object> { instance });
-
+        if (type is IDisposable disposable)
+            disposables.Add(disposable);
         if (lifecycle == Lifecycle.Singleton)
             AddToSingletons(type, instance);
     }
@@ -178,14 +181,8 @@ public partial class Scope
 
     public void Dispose ()
     {
-        foreach (KeyValuePair<Type, List<object>> pair in instantiated)
-        {
-            foreach (object instance in pair.Value)
-            {
-                if (instance is IDisposable disposable)
-                    disposable.Dispose();
-            }
-        }
+        foreach (IDisposable disposable in disposables)
+            disposable.Dispose();
 
         foreach (Scope scope in childScopes)
             scope.Dispose();

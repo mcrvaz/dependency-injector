@@ -24,17 +24,5 @@ public partial class Scope
             instance = default;
             return false;
         }
-
-        // public DependencyNode GetDependencyNode (Type type)
-        // {
-        //     Scope currentParent = scope.parent;
-        //     while (currentParent != null)
-        //     {
-        //         if (currentParent.dependencyGraph.TryGetNode(type, out DependencyNode node))
-        //             return node;
-        //         currentParent = currentParent.parent;
-        //     }
-        //     throw new InvalidOperationException($"No dependency node found for type {type}.");
-        // }
     }
 }

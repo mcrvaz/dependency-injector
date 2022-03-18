@@ -18,12 +18,5 @@ public partial class Scope
             instance = default;
             return false;
         }
-
-        // public DependencyNode GetDependencyNode (Type type)
-        // {
-        //     if (scope.dependencyGraph.TryGetNode(type, out DependencyNode node))
-        //         return node;
-        //     throw new InvalidOperationException($"No dependency node found for type {type}.");
-        // }
     }
 }

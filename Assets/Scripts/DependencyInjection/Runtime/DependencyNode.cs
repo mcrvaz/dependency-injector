@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-public readonly struct DependencyNode
+internal readonly struct DependencyNode
 {
     public static readonly DependencyNode[] EmptyDependencies = new DependencyNode[0];
 
