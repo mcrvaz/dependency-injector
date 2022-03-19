@@ -24,5 +24,17 @@ public partial class Scope
             instance = default;
             return false;
         }
+
+        public Type GetMappedType (Type type)
+        {
+            Scope currentParent = scope;
+            do
+            {
+                if (currentParent.typeMappings.TryGetValue(type, out Type mappedType))
+                    return mappedType;
+                currentParent = currentParent.parent;
+            } while (currentParent != null);
+            throw new InvalidOperationException($"Type mapping not found for {type}");
+        }
     }
 }

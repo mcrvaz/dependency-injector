@@ -19,6 +19,69 @@ public class ScopeTests
         public void Cleanup () { }
     }
 
+    class ResolveInterface : BaseScopeTests
+    {
+        [Test]
+        public void Resolve_IEmptyConstructor_To_EmptyConstructor_Singleton ()
+        {
+            Scope.Install<IEmptyConstructor, EmptyConstructor>(Lifecycle.Singleton);
+            Assert.IsTrue(Scope.Resolve<IEmptyConstructor>() is EmptyConstructor);
+        }
+
+        [Test]
+        public void Resolve_IIntConstructor_To_IntConstructor_Singleton ()
+        {
+            Scope.InstallFromInstance<int>(1);
+            Scope.Install<IIntConstructor, IntConstructor>(Lifecycle.Singleton);
+            Assert.IsTrue(Scope.Resolve<IIntConstructor>() is IntConstructor);
+        }
+
+        [Test]
+        public void Resolve_INestedEmptyConstructor_To_NestedEmptyConstructor_Concrete_Dependency ()
+        {
+            Scope.Install<EmptyConstructor>(Lifecycle.Singleton);
+            Scope.Install<INestedEmptyConstructor, NestedEmptyConstructor>(Lifecycle.Singleton);
+            Assert.IsTrue(Scope.Resolve<INestedEmptyConstructor>() is NestedEmptyConstructor);
+        }
+
+        [Test]
+        public void Resolve_INestedInterfaceEmptyConstructor_To_NestedEmptyConstructor_Interface_Dependency ()
+        {
+            Scope.Install<IEmptyConstructor, EmptyConstructor>(Lifecycle.Singleton);
+            Scope.Install<INestedEmptyConstructor, NestedInterfaceEmptyConstructor>(Lifecycle.Singleton);
+            Assert.IsTrue(Scope.Resolve<INestedEmptyConstructor>() is NestedInterfaceEmptyConstructor);
+        }
+
+        [Test]
+        public void Resolve_IDoubleNestedInterfaceEmptyConstructor_To_DoubleNestedEmptyConstructor_Interface_Dependency ()
+        {
+            Scope.Install<IEmptyConstructor, EmptyConstructor>(Lifecycle.Singleton);
+            Scope.Install<INestedEmptyConstructor, NestedInterfaceEmptyConstructor>(Lifecycle.Singleton);
+            Scope.Install<IDoubleNestedInterfaceEmptyConstructor, DoubleNestedInterfaceEmptyConstructor>(Lifecycle.Singleton);
+            Assert.IsTrue(Scope.Resolve<IDoubleNestedInterfaceEmptyConstructor>() is DoubleNestedInterfaceEmptyConstructor);
+        }
+
+        [Test]
+        public void Resolve_INestedEmptyConstructorMultipleNestedParameters_To_NestedEmptyConstructorMultipleNestedParameters ()
+        {
+            Scope.Install<IEmptyConstructor, EmptyConstructor>(Lifecycle.Singleton);
+            Scope.Install<INestedEmptyConstructor, NestedInterfaceEmptyConstructor>(Lifecycle.Singleton);
+            Scope.Install<IDoubleNestedInterfaceEmptyConstructor, DoubleNestedInterfaceEmptyConstructor>(Lifecycle.Singleton);
+            Scope.Install<INestedEmptyConstructorMultipleNestedParameters, NestedEmptyConstructorMultipleNestedParameters>(Lifecycle.Singleton);
+            Assert.IsTrue(Scope.Resolve<INestedEmptyConstructorMultipleNestedParameters>() is NestedEmptyConstructorMultipleNestedParameters);
+        }
+
+        [Test]
+        public void Resolve_INestedEmptyConstructorMultipleNestedParameters_To_NestedEmptyConstructorMultipleNestedParameters_Transient ()
+        {
+            Scope.Install<IEmptyConstructor, EmptyConstructor>(Lifecycle.Transient);
+            Scope.Install<INestedEmptyConstructor, NestedInterfaceEmptyConstructor>(Lifecycle.Transient);
+            Scope.Install<IDoubleNestedInterfaceEmptyConstructor, DoubleNestedInterfaceEmptyConstructor>(Lifecycle.Transient);
+            Scope.Install<INestedEmptyConstructorMultipleNestedParameters, NestedEmptyConstructorMultipleNestedParameters>(Lifecycle.Transient);
+            Assert.IsTrue(Scope.Resolve<INestedEmptyConstructorMultipleNestedParameters>() is NestedEmptyConstructorMultipleNestedParameters);
+        }
+    }
+
     class ResolveSingleton : BaseScopeTests
     {
         [Test]

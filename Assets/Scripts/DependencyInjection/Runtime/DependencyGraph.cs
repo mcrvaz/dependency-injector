@@ -8,19 +8,17 @@ internal class DependencyGraph
 
     readonly List<DependencyNode> nodes;
     readonly IReadOnlyDictionary<Type, RegistrationOptions> installations;
+    readonly IReadOnlyDictionary<Type, Type> typeMappings;
 
-    public DependencyGraph (IReadOnlyDictionary<Type, RegistrationOptions> installations)
+    public DependencyGraph (
+        IReadOnlyDictionary<Type, RegistrationOptions> installations,
+        IReadOnlyDictionary<Type, Type> typeMappings
+    )
     {
         this.installations = installations;
+        this.typeMappings = typeMappings;
         nodes = new List<DependencyNode>(installations.Count);
         GenerateGraph();
-    }
-
-    public DependencyNode GetNode (Type type)
-    {
-        if (TryGetNode(type, out DependencyNode node))
-            return node;
-        throw new NodeNotFoundException(type);
     }
 
     public bool TryGetNode (Type type, out DependencyNode resultNode)
@@ -45,11 +43,12 @@ internal class DependencyGraph
 
     DependencyNode GenerateNode (Type type, Lifecycle lifecycle)
     {
-        ConstructorInfo[] constructors = type.GetConstructors(
+        Type mappedType = typeMappings[type];
+        ConstructorInfo[] constructors = mappedType.GetConstructors(
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
         );
         if (constructors?.Length == 0)
-            return new DependencyNode(type, lifecycle, DependencyNode.EmptyDependencies);
+            return new DependencyNode(type, mappedType, lifecycle, DependencyNode.EmptyDependencies);
 
         ConstructorInfo constructorInfo = constructors[0];
         ParameterInfo[] parameters = constructorInfo.GetParameters();
@@ -60,12 +59,12 @@ internal class DependencyGraph
             Type parameterType = info.ParameterType;
             currentDeps[i] = GenerateNode(parameterType, installations[parameterType].Lifecycle);
         }
-        return new DependencyNode(type, lifecycle, currentDeps);
+        return new DependencyNode(type, mappedType, lifecycle, currentDeps);
     }
 }
 
 [Serializable]
 public class NodeNotFoundException : Exception
 {
-    public NodeNotFoundException (Type type) : base($"Node not found for type {type}") { }
+    public NodeNotFoundException (Type type) : base($"Node not found for type {type}.") { }
 }
