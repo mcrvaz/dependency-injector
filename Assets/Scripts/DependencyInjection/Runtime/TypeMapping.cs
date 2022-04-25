@@ -5,6 +5,8 @@ namespace DependencyInjector
 {
     internal class TypeMapping
     {
+        public IReadOnlyDictionary<Type, Type> TypeMappings => typeMappings;
+
         readonly Dictionary<Type, Type> typeMappings = new Dictionary<Type, Type>();
 
         public void AddTypeMapping (Type abstractType, Type concreteType)

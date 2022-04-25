@@ -9,11 +9,11 @@ namespace DependencyInjector
         public IReadOnlyList<DependencyNode> Nodes => nodes;
 
         readonly List<DependencyNode> nodes;
-        readonly IReadOnlyDictionary<Type, RegistrationOptions> installations;
+        readonly InstallationsContainer installations;
         readonly TypeMapping typeMappings;
 
         public DependencyGraph (
-            IReadOnlyDictionary<Type, RegistrationOptions> installations,
+            InstallationsContainer installations,
             TypeMapping typeMappings
         )
         {
@@ -39,7 +39,7 @@ namespace DependencyInjector
 
         void GenerateGraph ()
         {
-            foreach ((Type type, RegistrationOptions options) in installations)
+            foreach ((Type type, RegistrationOptions options) in installations.Installations)
                 nodes.Add(GenerateNode(type, options.Lifecycle));
         }
 
@@ -59,7 +59,7 @@ namespace DependencyInjector
             {
                 ParameterInfo info = parameters[i];
                 Type parameterType = info.ParameterType;
-                currentDeps[i] = GenerateNode(parameterType, installations[parameterType].Lifecycle);
+                currentDeps[i] = GenerateNode(parameterType, installations.Get(parameterType).Lifecycle);
             }
             return new DependencyNode(type, mappedType, lifecycle, currentDeps);
         }

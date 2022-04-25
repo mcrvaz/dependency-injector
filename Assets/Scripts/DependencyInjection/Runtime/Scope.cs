@@ -5,7 +5,7 @@ namespace DependencyInjector
 {
     public partial class Scope
     {
-        readonly Dictionary<Type, RegistrationOptions> installations = new Dictionary<Type, RegistrationOptions>();
+        readonly InstallationsContainer installations = new InstallationsContainer();
         readonly TypeMapping typeMappings = new TypeMapping();
         readonly Dictionary<Type, object> singletons = new Dictionary<Type, object>();
         readonly List<IDisposable> disposables = new List<IDisposable>();
@@ -55,7 +55,7 @@ namespace DependencyInjector
         public void ResolveAll ()
         {
             GenerateDependencyGraph();
-            foreach ((Type type, RegistrationOptions options) in installations)
+            foreach ((Type type, RegistrationOptions options) in installations.Installations)
                 Resolve(type, options.Lifecycle);
         }
 
@@ -72,7 +72,7 @@ namespace DependencyInjector
             (Type abstractType, Type concreteType) = (options.AbstractType, options.ConcreteType);
             typeMappings.AddTypeMapping(abstractType, concreteType);
 
-            if (installations.ContainsKey(abstractType))
+            if (installations.IsInstalled(abstractType))
                 throw new RegistrationException($"Type {abstractType} already installed as {options.Lifecycle}.");
             installations.Add(abstractType, options);
         }
@@ -89,7 +89,7 @@ namespace DependencyInjector
             Scope currentParent = this;
             do
             {
-                if (currentParent.installations.TryGetValue(type, out RegistrationOptions options))
+                if (currentParent.installations.TryGet(type, out RegistrationOptions options))
                     return options;
                 currentParent = currentParent.parent;
             } while (currentParent != null);
