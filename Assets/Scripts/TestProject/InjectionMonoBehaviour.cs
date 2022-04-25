@@ -24,9 +24,9 @@ public class InjectionMonoBehaviour : MonoBehaviour
     void Awake ()
     {
         Scope scope = new Scope();
-        scope.Install<InjectionTest.InjectionTestEmpty>(Lifecycle.Transient);
-        scope.InstallFromInstance<int>(1);
-        scope.Install<InjectionTest.InjectionTestInt>(Lifecycle.Transient);
+        scope.Register<InjectionTest.InjectionTestEmpty>(Lifecycle.Transient);
+        scope.RegisterFromInstance<int>(1);
+        scope.Register<InjectionTest.InjectionTestInt>(Lifecycle.Transient);
         scope.ResolveAll();
     }
 }

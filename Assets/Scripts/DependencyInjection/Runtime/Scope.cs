@@ -31,14 +31,22 @@ public partial class Scope
         return child;
     }
 
-    public void Install<T1, T2> (Lifecycle lifecycle) => Install(typeof(T1), typeof(T2), lifecycle);
+    public void Register<T1, T2> (Lifecycle lifecycle) =>
+        Register(new RegistrationOptions(typeof(T1), typeof(T2), lifecycle));
 
-    public void Install<T> (Lifecycle lifecycle) => Install(typeof(T), lifecycle);
+    public void Register<T> (Lifecycle lifecycle) =>
+        Register(new RegistrationOptions(typeof(T), lifecycle));
 
-    public void InstallFromInstance<T> (T instance)
+    public void RegisterFromFactory<T> (Func<object> factory, Lifecycle lifecycle) =>
+        Register(new RegistrationOptions(typeof(T), lifecycle, factory));
+
+    public void RegisterFromFactory<T1, T2> (Func<object> factory, Lifecycle lifecycle) =>
+        Register(new RegistrationOptions(typeof(T1), typeof(T2), lifecycle, factory));
+
+    public void RegisterFromInstance<T> (T instance)
     {
         Type type = typeof(T);
-        Install(type, Lifecycle.Singleton);
+        Register(new RegistrationOptions(type, Lifecycle.Singleton));
         FinishInstantiation(type, instance, Lifecycle.Singleton);
     }
 
@@ -57,14 +65,14 @@ public partial class Scope
         return (T)Resolve(type, options.Lifecycle);
     }
 
-    void Install (Type concreteType, Lifecycle lifecycle) => Install(concreteType, concreteType, lifecycle);
-    void Install (Type abstractType, Type concreteType, Lifecycle lifecycle)
+    void Register (RegistrationOptions options)
     {
+        (Type abstractType, Type concreteType) = (options.AbstractType, options.ConcreteType);
         AddToTypeMapping(abstractType, concreteType);
 
         if (installations.ContainsKey(abstractType))
-            throw new ArgumentException($"Type {abstractType} already installed as {lifecycle}.");
-        installations.Add(abstractType, new RegistrationOptions(lifecycle));
+            throw new ArgumentException($"Type {abstractType} already installed as {options.Lifecycle}.");
+        installations.Add(abstractType, options);
     }
 
     object Resolve (Type type, Lifecycle lifecycle) => lifecycle switch
@@ -97,10 +105,14 @@ public partial class Scope
     object ResolveAsTransient (DependencyNode targetNode)
     {
         RegistrationOptions options = GetInstallationOptions(targetNode.Type);
+        if (options.FactoryFunc != null)
+            return options.FactoryFunc();
+
         if (options.Lifecycle == Lifecycle.Singleton
             && dependencyResolver.TryResolveAsSingletonStrict(targetNode.Type, out object instance)
         )
             return instance;
+
         if (!targetNode.HasDependencies)
             return CreateFromEmptyConstructor(targetNode);
         return CreateFromNonEmptyConstructor(
@@ -116,7 +128,10 @@ public partial class Scope
         {
             DependencyNode dependency = node.Dependencies[i];
             RegistrationOptions options = GetInstallationOptions(dependency.Type);
-            if (options.Lifecycle == Lifecycle.Singleton
+
+            if (options.FactoryFunc != null)
+                dependencies[i] = options.FactoryFunc();
+            else if (options.Lifecycle == Lifecycle.Singleton
                 && dependencyResolver.TryResolveAsSingletonStrict(dependency.Type, out object instance)
             )
                 dependencies[i] = instance;
