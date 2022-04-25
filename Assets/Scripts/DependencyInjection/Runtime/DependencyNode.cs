@@ -1,24 +1,27 @@
 using System;
 using System.Collections.Generic;
 
-internal readonly struct DependencyNode
+namespace DependencyInjector
 {
-    public static readonly DependencyNode[] EmptyDependencies = new DependencyNode[0];
-
-    public IReadOnlyList<DependencyNode> Dependencies => dependencies;
-    public bool HasDependencies => dependencies?.Length > 0;
-
-    public readonly Type Type;
-    public readonly Type MappedType;
-    public readonly Lifecycle Lifecycle;
-
-    readonly DependencyNode[] dependencies;
-
-    public DependencyNode (Type type, Type mappedType, Lifecycle lifecycle, DependencyNode[] dependencies)
+    internal readonly struct DependencyNode
     {
-        Type = type;
-        MappedType = mappedType;
-        Lifecycle = lifecycle;
-        this.dependencies = dependencies;
+        public static readonly DependencyNode[] EmptyDependencies = new DependencyNode[0];
+
+        public IReadOnlyList<DependencyNode> Dependencies => dependencies;
+        public bool HasDependencies => dependencies?.Length > 0;
+
+        public readonly Type Type;
+        public readonly Type MappedType;
+        public readonly Lifecycle Lifecycle;
+
+        readonly DependencyNode[] dependencies;
+
+        public DependencyNode (Type type, Type mappedType, Lifecycle lifecycle, DependencyNode[] dependencies)
+        {
+            Type = type;
+            MappedType = mappedType;
+            Lifecycle = lifecycle;
+            this.dependencies = dependencies;
+        }
     }
 }

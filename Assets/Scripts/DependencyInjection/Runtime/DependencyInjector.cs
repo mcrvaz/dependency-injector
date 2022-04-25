@@ -1,11 +1,14 @@
 using System;
 
-public class DependencyInjector : IDisposable
+namespace DependencyInjector
 {
-    public Scope RootScope { get; } = new Scope();
-
-    public void Dispose ()
+    public class DependencyInjector : IDisposable
     {
-        RootScope.Dispose();
+        public Scope RootScope { get; } = new Scope();
+
+        public void Dispose ()
+        {
+            RootScope.Dispose();
+        }
     }
 }

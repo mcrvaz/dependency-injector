@@ -1,40 +1,43 @@
 using System;
 
-public partial class Scope
+namespace DependencyInjector
 {
-    public class SelfAndParentDependencyResolver
+    public partial class Scope
     {
-        readonly Scope scope;
-
-        public SelfAndParentDependencyResolver (Scope scope)
+        public class SelfAndParentDependencyResolver
         {
-            this.scope = scope;
-        }
+            readonly Scope scope;
 
-        public bool TryResolveAsSingletonStrict (Type type, out object instance)
-        {
-            Scope currentParent = scope;
-            do
+            public SelfAndParentDependencyResolver (Scope scope)
             {
-                if (currentParent.singletons.TryGetValue(type, out instance))
-                    return true;
-                currentParent = currentParent.parent;
-            } while (currentParent != null);
+                this.scope = scope;
+            }
 
-            instance = default;
-            return false;
-        }
-
-        public Type GetMappedType (Type type)
-        {
-            Scope currentParent = scope;
-            do
+            public bool TryResolveAsSingletonStrict (Type type, out object instance)
             {
-                if (currentParent.typeMappings.TryGetValue(type, out Type mappedType))
-                    return mappedType;
-                currentParent = currentParent.parent;
-            } while (currentParent != null);
-            throw new InvalidOperationException($"Type mapping not found for {type}");
+                Scope currentParent = scope;
+                do
+                {
+                    if (currentParent.singletons.TryGetValue(type, out instance))
+                        return true;
+                    currentParent = currentParent.parent;
+                } while (currentParent != null);
+
+                instance = default;
+                return false;
+            }
+
+            public Type GetMappedType (Type type)
+            {
+                Scope currentParent = scope;
+                do
+                {
+                    if (currentParent.typeMappings.TryGetMappedType(type, out Type mappedType))
+                        return mappedType;
+                    currentParent = currentParent.parent;
+                } while (currentParent != null);
+                throw new RegistrationException($"Type mapping not found for {type}");
+            }
         }
     }
 }

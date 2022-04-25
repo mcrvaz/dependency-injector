@@ -1,6 +1,6 @@
 {
     "name": "DependencyInjector.Runtime",
-    "rootNamespace": "",
+    "rootNamespace": "DependencyInjector",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],

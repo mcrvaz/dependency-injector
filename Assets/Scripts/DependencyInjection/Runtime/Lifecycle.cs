@@ -1,5 +1,8 @@
-public enum Lifecycle
+namespace DependencyInjector
 {
-    Singleton,
-    Transient
+    public enum Lifecycle
+    {
+        Singleton,
+        Transient
+    }
 }

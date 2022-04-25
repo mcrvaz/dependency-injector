@@ -1,32 +1,36 @@
 using UnityEngine;
 
-public class InjectionMonoBehaviour : MonoBehaviour
+namespace DependencyInjector.Tests
 {
-    public class InjectionTest
+    public class InjectionMonoBehaviour : MonoBehaviour
     {
-        public class InjectionTestEmpty
+        public class InjectionTest
         {
-            public InjectionTestEmpty ()
+            public class InjectionTestEmpty
             {
-                Debug.Log("InjectionTestEmpty");
+                public InjectionTestEmpty ()
+                {
+                    Debug.Log("InjectionTestEmpty");
+                }
+            }
+
+            public class InjectionTestInt
+            {
+                public InjectionTestInt (int i)
+                {
+                    Debug.Log($"InjectionTestInt {i}");
+                }
             }
         }
 
-        public class InjectionTestInt
+        void Awake ()
         {
-            public InjectionTestInt (int i)
-            {
-                Debug.Log($"InjectionTestInt {i}");
-            }
-        }
-    }
+            Scope scope = new Scope();
+            scope.Register<InjectionTest.InjectionTestEmpty>(Lifecycle.Transient);
+            scope.RegisterFromInstance<int>(1);
+            scope.Register<InjectionTest.InjectionTestInt>(Lifecycle.Transient);
 
-    void Awake ()
-    {
-        Scope scope = new Scope();
-        scope.Register<InjectionTest.InjectionTestEmpty>(Lifecycle.Transient);
-        scope.RegisterFromInstance<int>(1);
-        scope.Register<InjectionTest.InjectionTestInt>(Lifecycle.Transient);
-        scope.ResolveAll();
+            scope.ResolveAll();
+        }
     }
 }
