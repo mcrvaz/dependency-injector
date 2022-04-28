@@ -1,0 +1,3 @@
+Add Scoped Lifecycle - Singleton should be unique
+Add [Inject] attribute
+Add Unity resolution extensions

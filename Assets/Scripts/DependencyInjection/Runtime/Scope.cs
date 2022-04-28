@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace DependencyInjector
+namespace DependencyInjectionFramework
 {
     public partial class Scope
     {
@@ -16,25 +16,26 @@ namespace DependencyInjector
 
         DependencyGraph dependencyGraph;
 
-        public Scope ()
+        public Scope (IInstaller installer = null)
         {
             dependencyResolver = new SelfAndParentDependencyResolver(this);
+            installer?.Install(this);
         }
 
-        Scope (Scope parent) : this()
+        Scope (Scope parent, IInstaller installer) : this(installer)
         {
             this.parent = parent;
         }
 
-        public Scope CreateChildScope ()
+        public Scope CreateChildScope (IInstaller installer = null)
         {
-            Scope child = new Scope(this);
+            Scope child = new Scope(this, installer);
             childScopes.Add(child);
             return child;
         }
 
-        public void Register<T1, T2> (Lifecycle lifecycle) =>
-            Register(new RegistrationOptions(typeof(T1), typeof(T2), lifecycle));
+        public void Register<AbstractT, ConcreteT> (Lifecycle lifecycle) =>
+            Register(new RegistrationOptions(typeof(AbstractT), typeof(ConcreteT), lifecycle));
 
         public void Register<T> (Lifecycle lifecycle) =>
             Register(new RegistrationOptions(typeof(T), lifecycle));
@@ -42,21 +43,18 @@ namespace DependencyInjector
         public void RegisterFromFactory<T> (Func<object> factory, Lifecycle lifecycle) =>
             Register(new RegistrationOptions(typeof(T), lifecycle, factory));
 
-        public void RegisterFromFactory<T1, T2> (Func<object> factory, Lifecycle lifecycle) =>
-            Register(new RegistrationOptions(typeof(T1), typeof(T2), lifecycle, factory));
+        public void RegisterFromFactory<AbstractT, ConcreteT> (
+            Func<object> factory,
+            Lifecycle lifecycle
+        ) => Register(
+            new RegistrationOptions(typeof(AbstractT), typeof(ConcreteT), lifecycle, factory)
+        );
 
         public void RegisterFromInstance<T> (T instance)
         {
             Type type = typeof(T);
             Register(new RegistrationOptions(type, Lifecycle.Singleton));
             FinishInstantiation(type, instance, Lifecycle.Singleton);
-        }
-
-        public void ResolveAll ()
-        {
-            GenerateDependencyGraph();
-            foreach ((Type type, RegistrationOptions options) in installations.Installations)
-                Resolve(type, options.Lifecycle);
         }
 
         public T Resolve<T> ()
@@ -178,7 +176,7 @@ namespace DependencyInjector
 
         void FinishInstantiation (Type type, object instance, Lifecycle lifecycle)
         {
-            if (type is IDisposable disposable)
+            if (instance is IDisposable disposable)
                 disposables.Add(disposable);
             if (lifecycle == Lifecycle.Singleton)
                 AddToSingletons(type, instance);

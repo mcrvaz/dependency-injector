@@ -1,7 +1,7 @@
 #pragma warning disable IDE0150
 using NUnit.Framework;
 
-namespace DependencyInjector.Tests
+namespace DependencyInjectionFramework.Tests
 {
     using static TestClasses;
 

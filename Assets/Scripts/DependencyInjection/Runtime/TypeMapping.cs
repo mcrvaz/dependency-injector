@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace DependencyInjector
+namespace DependencyInjectionFramework
 {
     internal class TypeMapping
     {

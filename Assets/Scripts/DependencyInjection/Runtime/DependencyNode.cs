@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace DependencyInjector
+namespace DependencyInjectionFramework
 {
     internal readonly struct DependencyNode
     {
@@ -16,7 +16,12 @@ namespace DependencyInjector
 
         readonly DependencyNode[] dependencies;
 
-        public DependencyNode (Type type, Type mappedType, Lifecycle lifecycle, DependencyNode[] dependencies)
+        public DependencyNode (
+            Type type,
+            Type mappedType,
+            Lifecycle lifecycle,
+            DependencyNode[] dependencies
+        )
         {
             Type = type;
             MappedType = mappedType;

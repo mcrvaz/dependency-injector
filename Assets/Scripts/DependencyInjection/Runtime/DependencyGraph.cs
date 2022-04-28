@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace DependencyInjector
+namespace DependencyInjectionFramework
 {
     internal class DependencyGraph
     {
@@ -50,7 +50,12 @@ namespace DependencyInjector
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
             );
             if (constructors?.Length == 0)
-                return new DependencyNode(type, mappedType, lifecycle, DependencyNode.EmptyDependencies);
+                return new DependencyNode(
+                    type,
+                    mappedType,
+                    lifecycle,
+                    DependencyNode.EmptyDependencies
+                );
 
             ConstructorInfo constructorInfo = constructors[0];
             ParameterInfo[] parameters = constructorInfo.GetParameters();
@@ -59,7 +64,10 @@ namespace DependencyInjector
             {
                 ParameterInfo info = parameters[i];
                 Type parameterType = info.ParameterType;
-                currentDeps[i] = GenerateNode(parameterType, installations.Get(parameterType).Lifecycle);
+                currentDeps[i] = GenerateNode(
+                    parameterType,
+                    installations.Get(parameterType).Lifecycle
+                );
             }
             return new DependencyNode(type, mappedType, lifecycle, currentDeps);
         }

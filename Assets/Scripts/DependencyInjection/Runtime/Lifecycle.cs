@@ -1,4 +1,4 @@
-namespace DependencyInjector
+namespace DependencyInjectionFramework
 {
     public enum Lifecycle
     {

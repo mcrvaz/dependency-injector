@@ -1,6 +1,6 @@
 using System;
 
-namespace DependencyInjector
+namespace DependencyInjectionFramework
 {
     public class RegistrationException : Exception
     {

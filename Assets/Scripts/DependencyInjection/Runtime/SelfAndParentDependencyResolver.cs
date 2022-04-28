@@ -1,6 +1,6 @@
 using System;
 
-namespace DependencyInjector
+namespace DependencyInjectionFramework
 {
     public partial class Scope
     {

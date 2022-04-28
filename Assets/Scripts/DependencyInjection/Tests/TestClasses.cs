@@ -1,4 +1,4 @@
-namespace DependencyInjector.Tests
+namespace DependencyInjectionFramework.Tests
 {
     public class TestClasses
     {
