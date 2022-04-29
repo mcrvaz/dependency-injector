@@ -1,8 +1,9 @@
+using System;
 using UnityEngine;
 
 public static class ApplicationRoot
 {
-    static ApplicationContext context;
+    public static ApplicationContext Context { get; private set; }
 
     static ApplicationRoot ()
     {
@@ -10,21 +11,21 @@ public static class ApplicationRoot
         UnityEditor.EditorApplication.playModeStateChanged += (x) =>
         {
             if (x == UnityEditor.PlayModeStateChange.ExitingPlayMode)
-                Dispose();
+                DisposeContext();
         };
 #endif
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-    static void BeforeSceneLoad ()
+    static async void BeforeSceneLoad ()
     {
-        context?.Dispose();
-        context = new ApplicationContext();
-        context.Initialize();
+        Context?.Dispose();
+        Context = new ApplicationContext();
+        await Context.Initialize();
     }
 
-    static void Dispose ()
+    static void DisposeContext ()
     {
-        context?.Dispose();
+        Context?.Dispose();
     }
 }

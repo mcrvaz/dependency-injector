@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace DependencyInjectionFramework
 {
-    public partial class Scope
+    public partial class Scope : IScope
     {
         readonly InstallationsContainer installations = new InstallationsContainer();
         readonly TypeMapping typeMappings = new TypeMapping();
@@ -22,7 +22,7 @@ namespace DependencyInjectionFramework
             installer?.Install(this);
         }
 
-        Scope (Scope parent, IInstaller installer) : this(installer)
+        protected Scope (Scope parent, IInstaller installer) : this(installer)
         {
             this.parent = parent;
         }
@@ -79,7 +79,7 @@ namespace DependencyInjectionFramework
         {
             Lifecycle.Singleton => ResolveAsSingleton(type),
             Lifecycle.Transient => ResolveAsTransient(type),
-            _ => throw new RegistrationException($"Invalid lifecycle type. Value: {lifecycle}"),
+            _ => throw new ResolutionException($"Invalid lifecycle type. Value: {lifecycle}"),
         };
 
         RegistrationOptions GetInstallationOptions (Type type)
@@ -115,13 +115,13 @@ namespace DependencyInjectionFramework
         {
             RegistrationOptions options = GetInstallationOptions(node.Type);
 
-            if (options.FactoryFunc != null)
-                return options.FactoryFunc();
-
             if (options.Lifecycle == Lifecycle.Singleton
                 && dependencyResolver.TryResolveAsSingletonStrict(node.Type, out object instance)
             )
                 return instance;
+
+            if (options.FactoryFunc != null)
+                return ResolveFromFunc(options);
 
             if (!node.HasDependencies)
                 return CreateFromEmptyConstructor(node);
@@ -130,6 +130,17 @@ namespace DependencyInjectionFramework
                 node,
                 GetDependencies(node)
             );
+        }
+
+        object ResolveFromFunc (RegistrationOptions options)
+        {
+            object instance = options.FactoryFunc();
+            FinishInstantiation(
+                options.AbstractType,
+                instance,
+                options.Lifecycle
+            );
+            return instance;
         }
 
         void GenerateDependencyGraph ()
@@ -188,7 +199,7 @@ namespace DependencyInjectionFramework
                 throw new RegistrationException($"Singleton instance of type {type} already registered.");
         }
 
-        public void Dispose ()
+        public virtual void Dispose ()
         {
             foreach (IDisposable disposable in disposables)
                 disposable.Dispose();

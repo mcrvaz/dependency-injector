@@ -2,7 +2,7 @@ using DependencyInjectionFramework;
 
 public class GameContextInstaller : IInstaller
 {
-    public void Install (Scope scope)
+    public void Install (IScope scope)
     {
     }
 }

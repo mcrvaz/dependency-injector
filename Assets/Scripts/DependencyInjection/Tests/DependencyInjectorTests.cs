@@ -281,6 +281,38 @@ namespace DependencyInjectionFramework.Tests
                 parent.Register<NestedEmptyConstructor>(Lifecycle.Transient);
                 Assert.AreEqual(instance, child.Resolve<NestedEmptyConstructor>().Value);
             }
+
+            [Test]
+            public void Resolve_From_Factory_Singleton ()
+            {
+                Scope parent = Scope;
+                Scope child = parent.CreateChildScope();
+
+                parent.RegisterFromFactory<EmptyConstructor>(
+                    () => new EmptyConstructor(),
+                    Lifecycle.Singleton
+                );
+
+                EmptyConstructor i1 = parent.Resolve<EmptyConstructor>();
+                EmptyConstructor i2 = parent.Resolve<EmptyConstructor>();
+                Assert.AreEqual(i1, i2);
+            }
+
+            [Test]
+            public void Resolve_From_Factory_Transient ()
+            {
+                Scope parent = Scope;
+                Scope child = parent.CreateChildScope();
+
+                parent.RegisterFromFactory<EmptyConstructor>(
+                    () => new EmptyConstructor(),
+                    Lifecycle.Transient
+                );
+
+                EmptyConstructor i1 = parent.Resolve<EmptyConstructor>();
+                EmptyConstructor i2 = parent.Resolve<EmptyConstructor>();
+                Assert.AreNotEqual(i1, i2);
+            }
         }
     }
 }

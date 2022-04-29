@@ -64,10 +64,19 @@ namespace DependencyInjectionFramework
             {
                 ParameterInfo info = parameters[i];
                 Type parameterType = info.ParameterType;
-                currentDeps[i] = GenerateNode(
-                    parameterType,
-                    installations.Get(parameterType).Lifecycle
-                );
+                try
+                {
+                    currentDeps[i] = GenerateNode(
+                        parameterType,
+                        installations.Get(parameterType).Lifecycle
+                    );
+                }
+                catch (RegistrationException)
+                {
+                    throw new RegistrationException(
+                        $"Parameter {parameterType.Name} for {type.Name} is not registered."
+                    );
+                }
             }
             return new DependencyNode(type, mappedType, lifecycle, currentDeps);
         }
