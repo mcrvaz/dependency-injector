@@ -1,4 +1,4 @@
-- Attribute for specifying constructor to be injected
-- Unity registration extensions
+- Unity registration extensions + play mode tests
+- Specify scope type by linking Scene/GameObject to it
 - How to setup + suggested workflow
 - Property injection (?)
