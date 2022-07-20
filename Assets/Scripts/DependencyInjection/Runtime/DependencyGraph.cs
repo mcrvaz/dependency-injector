@@ -95,8 +95,12 @@ namespace DependencyInjector
             if (constructors?.Length == 0)
                 return emptyParams;
 
-            ConstructorInfo constructorInfo = constructors[0];
-            return constructorInfo.GetParameters();
+            foreach (ConstructorInfo ctor in constructors)
+            {
+                if (ctor.GetCustomAttribute<InjectAttribute>() != null)
+                    return ctor.GetParameters();
+            }
+            return constructors[0].GetParameters();
         }
     }
 }

@@ -314,5 +314,18 @@ namespace DependencyInjector.Tests
                 Assert.Throws<CircularDependencyException>(() => Scope.Resolve<A>());
             }
         }
+
+        class MultipleConstructorsTests : BaseScopeTests
+        {
+            [Test]
+            public void MultipleConstructors_Call_Marked_By_Attribute ()
+            {
+                int value = 1;
+                Scope.RegisterFromInstance<int>(value);
+                Scope.Register<MultipleConstructors>(Lifecycle.Singleton);
+                MultipleConstructors instance = Scope.Resolve<MultipleConstructors>();
+                Assert.AreEqual(value, instance.Value);
+            }
+        }
     }
 }

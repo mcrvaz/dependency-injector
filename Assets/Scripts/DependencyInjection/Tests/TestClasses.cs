@@ -84,5 +84,18 @@ namespace DependencyInjector.Tests
                 Value2 = value2;
             }
         }
+
+        public class MultipleConstructors
+        {
+            public readonly int? Value;
+
+            public MultipleConstructors () { }
+
+            [Inject]
+            public MultipleConstructors (int value)
+            {
+                Value = value;
+            }
+        }
     }
 }
