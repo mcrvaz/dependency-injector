@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using DependencyInjector.Exceptions;
 
 namespace DependencyInjector
 {
     internal class DependencyGraph
     {
         public IReadOnlyList<DependencyNode> Nodes => nodes;
+
+        static readonly ParameterInfo[] emptyParams = new ParameterInfo[0];
 
         readonly List<DependencyNode> nodes;
         readonly InstallationsContainer installations;
@@ -39,29 +42,61 @@ namespace DependencyInjector
 
         void GenerateGraph ()
         {
-            foreach ((Type type, RegistrationOptions options) in installations.Installations)
-                nodes.Add(GenerateNode(type, options.Lifecycle));
+            HashSet<Type> parentTypes = new HashSet<Type>();
+            foreach ((Type type, ref RegistrationOptions options) in installations.Installations)
+            {
+                nodes.Add(GenerateNode(type, options.Lifecycle, parentTypes));
+                parentTypes.Clear();
+            }
         }
 
-        DependencyNode GenerateNode (Type type, Lifecycle lifecycle)
+        DependencyNode GenerateNode (
+            Type type,
+            Lifecycle lifecycle,
+            HashSet<Type> parentTypes
+        )
         {
             Type mappedType = typeMappings.GetMappedType(type);
-            ConstructorInfo[] constructors = mappedType.GetConstructors(
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-            );
-            if (constructors?.Length == 0)
-                return new DependencyNode(type, mappedType, lifecycle, DependencyNode.EmptyDependencies);
+            ParameterInfo[] parameters = GetConstructorParameters(mappedType);
+            if (parameters.Length == 0)
+            {
+                return new DependencyNode(
+                    type,
+                    mappedType,
+                    lifecycle,
+                    DependencyNode.EmptyDependencies
+                );
+            }
 
-            ConstructorInfo constructorInfo = constructors[0];
-            ParameterInfo[] parameters = constructorInfo.GetParameters();
+            if (parentTypes.Contains(type))
+                throw new CircularDependencyException($"Circular dependency detected when trying to resolve type {type} as {mappedType}.");
+            parentTypes.Add(type);
+
             DependencyNode[] currentDeps = new DependencyNode[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
             {
                 ParameterInfo info = parameters[i];
                 Type parameterType = info.ParameterType;
-                currentDeps[i] = GenerateNode(parameterType, installations.Get(parameterType).Lifecycle);
+                currentDeps[i] = GenerateNode(
+                    parameterType,
+                    installations.Get(parameterType).Lifecycle,
+                    parentTypes
+                );
+                parentTypes.Clear();
             }
             return new DependencyNode(type, mappedType, lifecycle, currentDeps);
+        }
+
+        ParameterInfo[] GetConstructorParameters (Type mappedType)
+        {
+            ConstructorInfo[] constructors = mappedType.GetConstructors(
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            );
+            if (constructors?.Length == 0)
+                return emptyParams;
+
+            ConstructorInfo constructorInfo = constructors[0];
+            return constructorInfo.GetParameters();
         }
     }
 }

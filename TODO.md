@@ -1,0 +1,4 @@
+- Attribute for specifying constructor to be injected
+- Unity registration extensions
+- How to setup + suggested workflow
+- Property injection (?)

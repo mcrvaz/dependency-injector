@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DependencyInjector.Exceptions;
 
 namespace DependencyInjector
 {
@@ -33,32 +34,6 @@ namespace DependencyInjector
             return child;
         }
 
-        public void Register<T1, T2> (Lifecycle lifecycle) =>
-            Register(new RegistrationOptions(typeof(T1), typeof(T2), lifecycle));
-
-        public void Register<T> (Lifecycle lifecycle) =>
-            Register(new RegistrationOptions(typeof(T), lifecycle));
-
-        public void RegisterFromFactory<T> (Func<object> factory, Lifecycle lifecycle) =>
-            Register(new RegistrationOptions(typeof(T), lifecycle, factory));
-
-        public void RegisterFromFactory<T1, T2> (Func<object> factory, Lifecycle lifecycle) =>
-            Register(new RegistrationOptions(typeof(T1), typeof(T2), lifecycle, factory));
-
-        public void RegisterFromInstance<T> (T instance)
-        {
-            Type type = typeof(T);
-            Register(new RegistrationOptions(type, Lifecycle.Singleton));
-            FinishInstantiation(type, instance, Lifecycle.Singleton);
-        }
-
-        public void ResolveAll ()
-        {
-            GenerateDependencyGraph();
-            foreach ((Type type, RegistrationOptions options) in installations.Installations)
-                Resolve(type, options.Lifecycle);
-        }
-
         public T Resolve<T> ()
         {
             GenerateDependencyGraph();
@@ -67,7 +42,14 @@ namespace DependencyInjector
             return (T)Resolve(type, options.Lifecycle);
         }
 
-        void Register (RegistrationOptions options)
+        public void RegisterFromInstance<T> (T instance)
+        {
+            Type type = typeof(T);
+            Register(new RegistrationOptions(type, Lifecycle.Singleton));
+            FinishInstantiation(type, instance, Lifecycle.Singleton);
+        }
+
+        public void Register (RegistrationOptions options)
         {
             (Type abstractType, Type concreteType) = (options.AbstractType, options.ConcreteType);
             typeMappings.AddTypeMapping(abstractType, concreteType);
@@ -140,10 +122,12 @@ namespace DependencyInjector
             do
             {
                 if (currentParent.dependencyGraph == null)
+                {
                     currentParent.dependencyGraph = new DependencyGraph(
                         currentParent.installations,
                         currentParent.typeMappings
                     );
+                }
                 currentParent = currentParent.parent;
             } while (currentParent != null);
         }

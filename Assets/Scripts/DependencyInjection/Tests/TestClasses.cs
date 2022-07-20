@@ -70,11 +70,15 @@ namespace DependencyInjector.Tests
         }
 
         public interface INestedEmptyConstructorMultipleNestedParameters { }
-        public class NestedEmptyConstructorMultipleNestedParameters : INestedEmptyConstructorMultipleNestedParameters
+        public class NestedEmptyConstructorMultipleNestedParameters :
+            INestedEmptyConstructorMultipleNestedParameters
         {
             public readonly INestedEmptyConstructor Value1;
             public readonly IDoubleNestedInterfaceEmptyConstructor Value2;
-            public NestedEmptyConstructorMultipleNestedParameters (INestedEmptyConstructor value1, IDoubleNestedInterfaceEmptyConstructor value2)
+            public NestedEmptyConstructorMultipleNestedParameters (
+                INestedEmptyConstructor value1,
+                IDoubleNestedInterfaceEmptyConstructor value2
+            )
             {
                 Value1 = value1;
                 Value2 = value2;

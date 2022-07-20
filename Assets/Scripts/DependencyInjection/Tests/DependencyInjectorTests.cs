@@ -1,4 +1,5 @@
 #pragma warning disable IDE0150
+using DependencyInjector.Exceptions;
 using NUnit.Framework;
 
 namespace DependencyInjector.Tests
@@ -132,7 +133,7 @@ namespace DependencyInjector.Tests
             }
         }
 
-        class Resolve_IntConstutor : BaseScopeTests
+        class Resolve_IntConstructor : BaseScopeTests
         {
             [Test]
             public void Resolve_Instance ()
@@ -153,7 +154,7 @@ namespace DependencyInjector.Tests
             }
         }
 
-        class Resolve_NestedConstutor : BaseScopeTests
+        class Resolve_NestedConstructor : BaseScopeTests
         {
             [Test]
             public void Resolve_Instance ()
@@ -280,6 +281,37 @@ namespace DependencyInjector.Tests
                 parent.RegisterFromFactory<EmptyConstructor>(() => instance, Lifecycle.Transient);
                 parent.Register<NestedEmptyConstructor>(Lifecycle.Transient);
                 Assert.AreEqual(instance, child.Resolve<NestedEmptyConstructor>().Value);
+            }
+        }
+
+        class CircularDependencies : BaseScopeTests
+        {
+            class A
+            {
+                public B Child;
+
+                public A (B child)
+                {
+                    Child = child;
+                }
+            }
+
+            class B
+            {
+                public A Child;
+
+                public B (A child)
+                {
+                    Child = child;
+                }
+            }
+
+            [Test]
+            public void Simple_Circular_Dependency ()
+            {
+                Scope.Register<A>(Lifecycle.Singleton);
+                Scope.Register<B>(Lifecycle.Singleton);
+                Assert.Throws<CircularDependencyException>(() => Scope.Resolve<A>());
             }
         }
     }

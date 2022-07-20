@@ -30,7 +30,9 @@ namespace DependencyInjector.Tests
             scope.RegisterFromInstance<int>(1);
             scope.Register<InjectionTest.InjectionTestInt>(Lifecycle.Transient);
 
-            scope.ResolveAll();
+            scope.Resolve<InjectionTest.InjectionTestEmpty>();
+            scope.Resolve<int>();
+            scope.Resolve<InjectionTest.InjectionTestInt>();
         }
     }
 }

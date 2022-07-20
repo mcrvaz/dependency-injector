@@ -16,7 +16,12 @@ namespace DependencyInjector
 
         readonly DependencyNode[] dependencies;
 
-        public DependencyNode (Type type, Type mappedType, Lifecycle lifecycle, DependencyNode[] dependencies)
+        public DependencyNode (
+            Type type,
+            Type mappedType,
+            Lifecycle lifecycle,
+            DependencyNode[] dependencies
+        )
         {
             Type = type;
             MappedType = mappedType;

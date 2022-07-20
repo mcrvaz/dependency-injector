@@ -1,4 +1,5 @@
 using System;
+using DependencyInjector.Exceptions;
 
 namespace DependencyInjector
 {

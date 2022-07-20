@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DependencyInjector.Exceptions;
 
 namespace DependencyInjector
 {
@@ -7,11 +8,13 @@ namespace DependencyInjector
     {
         public IReadOnlyDictionary<Type, RegistrationOptions> Installations => installations;
         public int Count => installations.Count;
-        readonly Dictionary<Type, RegistrationOptions> installations = new Dictionary<Type, RegistrationOptions>();
+        readonly Dictionary<Type, RegistrationOptions> installations =
+            new Dictionary<Type, RegistrationOptions>();
 
         public bool IsInstalled (Type type) => installations.ContainsKey(type);
 
-        public void Add (Type type, RegistrationOptions options) => installations.Add(type, options);
+        public void Add (Type type, RegistrationOptions options) =>
+            installations.Add(type, options);
 
         public RegistrationOptions Get (Type type)
         {

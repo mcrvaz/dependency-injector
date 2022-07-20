@@ -2,7 +2,7 @@ using System;
 
 namespace DependencyInjector
 {
-    internal class RegistrationOptions
+    public readonly struct RegistrationOptions
     {
         public readonly Type AbstractType;
         public readonly Type ConcreteType;
@@ -18,7 +18,12 @@ namespace DependencyInjector
         public RegistrationOptions (Type concreteType, Lifecycle lifecycle, Func<object> factoryFunc)
             : this(concreteType, concreteType, lifecycle, factoryFunc) { }
 
-        public RegistrationOptions (Type abstractType, Type concreteType, Lifecycle lifecycle, Func<object> factoryFunc)
+        public RegistrationOptions (
+            Type abstractType,
+            Type concreteType,
+            Lifecycle lifecycle,
+            Func<object> factoryFunc
+        )
         {
             AbstractType = abstractType;
             ConcreteType = concreteType;
